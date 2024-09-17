@@ -21,7 +21,7 @@ This scraper pulls the following data from each article in The Guardian's Stage 
 | Review Title                          | Article Link                          | Star Rating |
 | ------------------------------------- | ------------------------------------- | ----------- |
 | Ben Elton: Authentic Stupidity review | https://www.theguardian.com/stage/... | 4/5         |
-| [More Review Titles]                  | [More Links]                          | 3/5         |
+| [More Review Titles]                  | [More Links]                          | No Rating   |
 
 ---
 
