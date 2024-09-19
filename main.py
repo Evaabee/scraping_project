@@ -1,36 +1,55 @@
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
+import re
+import time
 
-url = 'https://www.theguardian.com/stage' 
+base_url = 'https://www.theguardian.com/stage/stage+tone/reviews?page=' 
 
-#send a request to fetch the Stage section page content
-response = requests.get(url)
+num_pages = int(input("Enter the number of latest pages to scrape: "))
 
-#check if  request was successful
-if response.status_code == 200:
-    print("Successfully fetched the Stage page.")
-else:
-    print("Failed to fetch the Stage page. Status code:", response.status_code)
-
-#parse the Stage section html content
-soup = BeautifulSoup(response.content, 'html.parser')
-
-
-review_titles = []
+review_dates = []
+review_shows = []
+review_headlines = []
 review_links = []
 star_ratings = []
 
-#find  article links in the Stage section
-articles = soup.find_all('a', attrs={'aria-label': True})
+for page in range(1, num_pages + 1):
+    url = base_url + str(page)
+    #send a request to fetch the Stage section page content
+    response = requests.get(url)
 
-#;oop through each article link 
-for article in articles:
-    review_title = article['aria-label']
-    review_link = 'https://www.theguardian.com' + article['href']
+    #check if request was successful
+    if response.status_code == 200:
+        print("Successfully fetched page number ", page)
+    else:
+        print("Failed to fetch page number ", page, ". Status code:", response.status_code)
 
-    if '/stage/2024' in review_link:
-        review_titles.append(review_title)
+    #parse the Stage section html content
+    soup = BeautifulSoup(response.content, 'html.parser')
+
+
+
+
+    #find  article links in the Stage section
+    articles = soup.find_all('a', attrs={'aria-hidden': True})
+
+    #loop through each article link 
+    for article in articles:
+        review_title = article.get_text().strip()
+        review_link = article['href']
+        match = re.match(r"^(.*) review\s*[-–]\s*(.*)$", review_title)
+        if match:
+            show = match.group(1).strip()
+            headline = match.group(2).strip()
+
+
+        # Extract the date from the URL (assuming the URL contains the date in YYYY/MM/DD format)
+        date_match = re.search(r'/(\d{4}/\w{3}/\d{2})/', review_link)
+        review_date = date_match.group(1) if date_match else None
+        review_dates.append(review_date)
+        review_shows.append(show)
+        review_headlines.append(headline)
         review_links.append(review_link)
 
         #visit each article page to scrape the star rating
@@ -60,13 +79,22 @@ for article in articles:
                 total_stars = solid_stars + empty_stars
                 star_ratings.append(f'{solid_stars}/{total_stars}')
             else:
-                star_ratings.append('No Rating')  
+                review_dates.remove(review_date)
+                review_shows.remove(show)
+                review_headlines.remove(headline)
+                review_links.remove(review_link)
         else:
-            star_ratings.append('No Rating')  
-
+            review_dates.remove(review_date)
+            review_shows.remove(show)
+            review_headlines.remove(headline)
+            review_links.remove(review_link)
+    # sleep for 2 seconds between each page
+    time.sleep(2)
 
 data = {
-    'Review Title': review_titles,
+    'Review Date' : review_dates,
+    'Show': review_shows,
+    'Headline' : review_headlines,
     'Article Link': review_links,
     'Star Rating': star_ratings
 }
